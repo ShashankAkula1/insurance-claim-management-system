@@ -1,0 +1,127 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>Admin Portal</h1>
+    <div class="user-info">
+      <span>Welcome, {{ currentUser?.username }}</span>
+      <button class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+    <div class="stats-cards">
+      <div class="stat-card">
+        <h3>Total Claims</h3>
+        <p class="stat-number">{{ adminStats.totalClaims }}</p>
+      </div>
+      <div class="stat-card pending">
+        <h3>Pending Review</h3>
+        <p class="stat-number">{{ adminStats.pendingClaims }}</p>
+      </div>
+      <div class="stat-card approved">
+        <h3>Approved Today</h3>
+        <p class="stat-number">{{ adminStats.approvedToday }}</p>
+      </div>
+      <div class="stat-card rejected">
+        <h3>Rejected Today</h3>
+        <p class="stat-number">{{ adminStats.rejectedToday }}</p>
+      </div>
+    </div>
+
+    <div class="claims-management">
+      <div class="section-header">
+        <h3>Claims Management</h3>
+        <div class="filters">
+          <select [(ngModel)]="selectedStatus" (change)="filterClaims()">
+            <option value="">All Claims</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="claims-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Claim #</th>
+              <th>Customer</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let claim of filteredClaims">
+              <td>{{ claim.claimNumber }}</td>
+              <td>{{ claim.userId }}</td>
+              <td>{{ claim.claimType }}</td>
+              <td>₹{{ claim.claimAmount }}</td>
+              <td>{{ claim.submittedDate | date }}</td>
+              <td>
+                <span class="status" [class]="claim.status.toLowerCase()">
+                  {{ claim.status }}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons" *ngIf="claim.status === 'PENDING'">
+                  <button class="btn-approve" (click)="approveClaim(claim)">Approve</button>
+                  <button class="btn-reject" (click)="rejectClaim(claim)">Reject</button>
+                </div>
+                <button class="btn-view" (click)="viewClaimDetails(claim)">View</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Claim Details Modal -->
+    <div class="modal" *ngIf="selectedClaim">
+      <div class="modal-content large">
+        <h3>Claim Details</h3>
+        <div class="claim-details">
+          <div class="detail-row">
+            <label>Claim Number:</label>
+            <span>{{ selectedClaim.claimNumber }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Policy ID:</label>
+            <span>{{ selectedClaim.policyId }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Claim Type:</label>
+            <span>{{ selectedClaim.claimType }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Amount:</label>
+            <span>₹{{ selectedClaim.claimAmount }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Incident Date:</label>
+            <span>{{ selectedClaim.incidentDate | date }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Description:</label>
+            <p>{{ selectedClaim.description }}</p>
+          </div>
+        </div>
+        
+        <div class="modal-actions" *ngIf="selectedClaim.status === 'PENDING'">
+          <div class="approval-section">
+            <button class="btn-approve" (click)="processApproval()">Approve Full Amount</button>
+          </div>
+          <div class="rejection-section">
+            <label>Rejection Reason:</label>
+            <textarea [(ngModel)]="rejectionReason" placeholder="Enter rejection reason"></textarea>
+            <button class="btn-reject" (click)="processRejection()">Reject</button>
+          </div>
+        </div>
+        
+        <button class="btn-close" (click)="selectedClaim = null">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

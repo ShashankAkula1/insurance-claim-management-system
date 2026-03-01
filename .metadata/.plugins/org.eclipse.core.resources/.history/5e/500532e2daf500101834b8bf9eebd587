@@ -1,0 +1,107 @@
+package com.insurance.claim.controller;
+
+import com.insurance.claim.dto.ClaimDTO;
+import com.insurance.claim.entity.Claim;
+import com.insurance.claim.service.ClaimService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/claims")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
+public class ClaimController {
+    
+    private final ClaimService claimService;
+    
+    @PostMapping
+    public ResponseEntity<ClaimDTO> submitClaim(@Valid @RequestBody ClaimDTO claimDTO) {
+        ClaimDTO createdClaim = claimService.submitClaim(claimDTO);
+        return new ResponseEntity<>(createdClaim, HttpStatus.CREATED);
+    }
+    
+    @GetMapping("/{claimId}")
+    public ResponseEntity<ClaimDTO> getClaimById(@PathVariable Long claimId) {
+        ClaimDTO claim = claimService.getClaimById(claimId);
+        return ResponseEntity.ok(claim);
+    }
+    
+    @GetMapping("/number/{claimNumber}")
+    public ResponseEntity<ClaimDTO> getClaimByNumber(@PathVariable String claimNumber) {
+        ClaimDTO claim = claimService.getClaimByClaimNumber(claimNumber);
+        return ResponseEntity.ok(claim);
+    }
+    
+    @GetMapping
+    public ResponseEntity<List<ClaimDTO>> getAllClaims() {
+        List<ClaimDTO> claims = claimService.getAllClaims();
+        return ResponseEntity.ok(claims);
+    }
+    
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<ClaimDTO>> getClaimsByUserId(@PathVariable Long userId) {
+        List<ClaimDTO> claims = claimService.getClaimsByUserId(userId);
+        return ResponseEntity.ok(claims);
+    }
+    
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<ClaimDTO>> getClaimsByStatus(@PathVariable Claim.ClaimStatus status) {
+        List<ClaimDTO> claims = claimService.getClaimsByStatus(status);
+        return ResponseEntity.ok(claims);
+    }
+    
+    @PutMapping("/{claimId}/status")
+    public ResponseEntity<ClaimDTO> updateClaimStatus(
+            @PathVariable Long claimId,
+            @RequestParam Claim.ClaimStatus status,
+            @RequestParam Long reviewedBy) {
+        ClaimDTO updatedClaim = claimService.updateClaimStatus(claimId, status, reviewedBy);
+        return ResponseEntity.ok(updatedClaim);
+    }
+    
+    @PutMapping("/{claimId}/approve")
+    public ResponseEntity<ClaimDTO> approveClaim(
+            @PathVariable Long claimId,
+            @RequestBody Map<String, Object> request) {
+        Double approvedAmount = ((Number) request.get("approvedAmount")).doubleValue();
+        Long reviewedBy = ((Number) request.get("reviewedBy")).longValue();
+        
+        ClaimDTO updatedClaim = claimService.approveClaim(claimId, approvedAmount, reviewedBy);
+        return ResponseEntity.ok(updatedClaim);
+    }
+    
+    @PutMapping("/{claimId}/reject")
+    public ResponseEntity<ClaimDTO> rejectClaim(
+            @PathVariable Long claimId,
+            @RequestBody Map<String, Object> request) {
+        String rejectionReason = (String) request.get("rejectionReason");
+        Long reviewedBy = ((Number) request.get("reviewedBy")).longValue();
+        
+        ClaimDTO updatedClaim = claimService.rejectClaim(claimId, rejectionReason, reviewedBy);
+        return ResponseEntity.ok(updatedClaim);
+    }
+    
+    @DeleteMapping("/{claimId}")
+    public ResponseEntity<Void> deleteClaim(@PathVariable Long claimId) {
+        claimService.deleteClaim(claimId);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/count/status/{status}")
+    public ResponseEntity<Long> getClaimCountByStatus(@PathVariable Claim.ClaimStatus status) {
+        Long count = claimService.getClaimCountByStatus(status);
+        return ResponseEntity.ok(count);
+    }
+    
+    @GetMapping("/count/user/{userId}")
+    public ResponseEntity<Long> getClaimCountByUser(@PathVariable Long userId) {
+        Long count = claimService.getClaimCountByUser(userId);
+        return ResponseEntity.ok(count);
+    }
+}

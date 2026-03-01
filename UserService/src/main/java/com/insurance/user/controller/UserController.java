@@ -1,0 +1,78 @@
+package com.insurance.user.controller;
+
+import com.insurance.user.dto.LoginRequest;
+import com.insurance.user.dto.LoginResponse;
+import com.insurance.user.dto.UserDTO;
+import com.insurance.user.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+@CrossOrigin(origins = "http://localhost:4200")
+public class UserController {
+
+    private final UserService userService;
+
+   public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<UserDTO> registerUser(@Valid @RequestBody UserDTO userDTO) {
+        UserDTO createdUser = userService.registerUser(userDTO);
+        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
+        LoginResponse response = userService.loginUser(loginRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
+        UserDTO user = userService.getUserById(userId);
+        return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/username/{username}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+        UserDTO user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(user);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<UserDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long userId,
+            @Valid @RequestBody UserDTO userDTO) {
+        UserDTO updatedUser = userService.updateUser(userId, userDTO);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/exists/username/{username}")
+    public ResponseEntity<Boolean> checkUsernameExists(@PathVariable String username) {
+        return ResponseEntity.ok(userService.existsByUsername(username));
+    }
+
+    @GetMapping("/exists/email/{email}")
+    public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
+        return ResponseEntity.ok(userService.existsByEmail(email));
+    }
+}

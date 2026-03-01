@@ -1,0 +1,5 @@
+package com.insurance.policy.dto;
+
+public class PolicyDTO {
+
+}

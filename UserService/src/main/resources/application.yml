@@ -1,0 +1,11 @@
+server:
+  port: 8282   # unique port per service
+
+spring:
+  application:
+    name: USER-SERVICE  # IMPORTANT: unique name
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

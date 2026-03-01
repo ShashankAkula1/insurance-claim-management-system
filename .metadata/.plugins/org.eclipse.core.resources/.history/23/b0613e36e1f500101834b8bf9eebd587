@@ -1,0 +1,5 @@
+package com.insurance.user.config;
+
+public class SecurityConfig {
+
+}

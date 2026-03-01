@@ -1,0 +1,151 @@
+package com.insurance.user.service;
+
+import com.insurance.user.dto.LoginRequest;
+import com.insurance.user.dto.LoginResponse;
+import com.insurance.user.dto.UserDTO;
+import com.insurance.user.entity.User;
+import com.insurance.user.repository.UserRepository;
+import com.insurance.user.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    
+    @Override
+    @Transactional
+    public UserDTO registerUser(UserDTO userDTO) {
+        // Check if username exists
+        if (userRepository.existsByUsername(userDTO.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+        
+        // Check if email exists
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+        
+        // Create new user
+        User user = new User();
+        user.setUsername(userDTO.getUsername());
+        user.setEmail(userDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setFullName(userDTO.getFullName());
+        user.setPhone(userDTO.getPhone());
+        user.setRole(userDTO.getRole() != null ? userDTO.getRole() : User.Role.CUSTOMER);
+        user.setIsActive(true);
+        
+        User savedUser = userRepository.save(user);
+        return convertToDTO(savedUser);
+    }
+    
+    @Override
+    public LoginResponse loginUser(LoginRequest loginRequest) {
+        User user = userRepository.findByUsername(loginRequest.getUsername())
+            .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+        
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+        
+        if (!user.getIsActive()) {
+            throw new RuntimeException("Account is deactivated");
+        }
+        
+        String token = jwtTokenProvider.generateToken(user.getUsername(), user.getRole().toString());
+        
+        return new LoginResponse(
+            token,
+            user.getUsername(),
+            user.getEmail(),
+            user.getRole().toString(),
+            "Login successful"
+        );
+    }
+    
+    @Override
+    public UserDTO getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return convertToDTO(user);
+    }
+    
+    @Override
+    public UserDTO getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return convertToDTO(user);
+    }
+    
+    @Override
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll()
+            .stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional
+    public UserDTO updateUser(Long userId, UserDTO userDTO) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (userDTO.getFullName() != null) {
+            user.setFullName(userDTO.getFullName());
+        }
+        if (userDTO.getPhone() != null) {
+            user.setPhone(userDTO.getPhone());
+        }
+        if (userDTO.getEmail() != null && !userDTO.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(userDTO.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+            user.setEmail(userDTO.getEmail());
+        }
+        
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+    
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("User not found");
+        }
+        userRepository.deleteById(userId);
+    }
+    
+    @Override
+    public Boolean existsByUsername(String username) {
+        return userRepository.existsByUsername(username);
+    }
+    
+    @Override
+    public Boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+    
+    private UserDTO convertToDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setUserId(user.getUserId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setFullName(user.getFullName());
+        dto.setPhone(user.getPhone());
+        dto.setRole(user.getRole());
+        dto.setIsActive(user.getIsActive());
+        return dto;
+    }
+}

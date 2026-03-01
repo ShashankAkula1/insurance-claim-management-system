@@ -1,0 +1,5 @@
+package com.insurance.claim.entity;
+
+public class Claim {
+
+}

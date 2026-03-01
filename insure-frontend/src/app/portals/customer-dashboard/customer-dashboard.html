@@ -1,0 +1,160 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>Customer Portal</h1>
+    <div class="user-info">
+      <span>Welcome, {{ currentUser?.username }}</span>
+      <button class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+    <div class="stats-cards">
+      <div class="stat-card">
+        <h3>Total Claims</h3>
+        <p class="stat-number">{{ userStats.totalClaims }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Claims</h3>
+        <p class="stat-number">{{ userStats.pendingClaims }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Approved Claims</h3>
+        <p class="stat-number">{{ userStats.approvedClaims }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Rejected Claims</h3>
+        <p class="stat-number">{{ userStats.rejectedClaims }}</p>
+      </div>
+    </div>
+
+    <div class="action-section">
+      <div class="action-card">
+        <h3>Submit New Claim</h3>
+        <p>File a new insurance claim for Health, Motor, or Life insurance</p>
+        <button class="btn-primary" (click)="showClaimForm = true">Submit Claim</button>
+      </div>
+      
+      <div class="action-card">
+        <h3>Track Claims</h3>
+        <p>View status and progress of your submitted claims</p>
+        <button class="btn-secondary" (click)="showClaimsList = true">View Claims</button>
+      </div>
+    </div>
+
+    <!-- Claim Submission Form -->
+    <div class="modal" *ngIf="showClaimForm">
+      <div class="modal-content">
+        <h3>Submit New Claim</h3>
+        <form [formGroup]="claimForm" (ngSubmit)="submitClaim()">
+          <div class="form-group">
+            <label>Policy ID</label>
+            <input type="text" value="POLICY-01" disabled readonly>
+          </div>
+          <div class="form-group">
+            <label>Claim Type</label>
+            <select formControlName="claimType" required>
+              <option value="HEALTH">Health</option>
+              <option value="MOTOR">Motor</option>
+              <option value="LIFE">Life</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Claim Amount</label>
+            <input type="number" formControlName="claimAmount" placeholder="Enter amount" min="1" required>
+            <div *ngIf="(claimForm.get('claimAmount')?.invalid && claimForm.get('claimAmount')?.touched) || (claimForm.get('claimAmount')?.invalid && submitted)" class="error">
+              <span *ngIf="claimForm.get('claimAmount')?.errors?.['required']">Claim amount is required</span>
+              <span *ngIf="claimForm.get('claimAmount')?.errors?.['min']">Amount must be greater than 0</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Incident Date</label>
+            <input type="date" formControlName="incidentDate" [max]="today" required>
+            <div *ngIf="(claimForm.get('incidentDate')?.invalid && claimForm.get('incidentDate')?.touched) || (claimForm.get('incidentDate')?.invalid && submitted)" class="error">
+              <span *ngIf="claimForm.get('incidentDate')?.errors?.['required']">Incident date is required</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" placeholder="Describe the incident" required></textarea>
+            <div *ngIf="(claimForm.get('description')?.invalid && claimForm.get('description')?.touched) || (claimForm.get('description')?.invalid && submitted)" class="error">
+              <span *ngIf="claimForm.get('description')?.errors?.['required']">Description is required</span>
+              <span *ngIf="claimForm.get('description')?.errors?.['minlength']">Description must be at least 10 characters</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Document Verification (All required)</label>
+            <div class="checkbox-group" *ngIf="claimForm.get('claimType')?.value === 'HEALTH'">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="medicalReport" required>
+                Medical Report Attached
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="policyCopy" required>
+                Policy Copy Attached
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="identityProof" required>
+                Identity Proof Attached
+              </label>
+            </div>
+            <div class="checkbox-group" *ngIf="claimForm.get('claimType')?.value === 'MOTOR'">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="medicalReport" required>
+                Accident Report Attached
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="policyCopy" required>
+                Vehicle Registration Copy Attached
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="identityProof" required>
+                Driving License Copy Attached
+              </label>
+            </div>
+            <div class="checkbox-group" *ngIf="claimForm.get('claimType')?.value === 'LIFE'">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="medicalReport" required>
+                Death Certificate Attached
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="policyCopy" required>
+                Policy Copy Attached
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="identityProof" required>
+                Nominee Identity Proof Attached
+              </label>
+            </div>
+            <div *ngIf="!allDocumentsChecked() && (claimForm.get('medicalReport')?.touched || claimForm.get('policyCopy')?.touched || claimForm.get('identityProof')?.touched)" class="error">
+              All document verifications are required
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="claimForm.invalid || isLoading || !allDocumentsChecked()">
+              {{ isLoading ? 'Submitting...' : 'Submit Claim' }}
+            </button>
+            <button type="button" class="btn-secondary" (click)="showClaimForm = false">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Claims List -->
+    <div class="claims-section" *ngIf="showClaimsList">
+      <h3>Your Claims</h3>
+      <div class="claims-list">
+        <div class="claim-item" *ngFor="let claim of userClaims">
+          <div class="claim-info">
+            <h4>{{ claim.claimNumber }}</h4>
+            <p>{{ claim.claimType }} - ₹{{ claim.claimAmount }}</p>
+            <p *ngIf="claim.status === 'REJECTED' && claim.rejectionReason" class="rejection-reason">Reason: {{ claim.rejectionReason }}</p>
+            <span class="status" [class]="claim.status.toLowerCase()">{{ claim.status }}</span>
+          </div>
+          <div class="claim-date">
+            {{ claim.submittedDate | date }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

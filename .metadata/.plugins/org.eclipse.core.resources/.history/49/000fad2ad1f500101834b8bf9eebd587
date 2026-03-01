@@ -1,0 +1,5 @@
+package com.insurance.entity;
+
+public class User {
+
+}

@@ -1,0 +1,5 @@
+package com.insurance.user.repository;
+
+public interface UserRepository {
+
+}
